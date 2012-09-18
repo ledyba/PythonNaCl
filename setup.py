@@ -323,6 +323,8 @@ class PyBuildExt(build_ext):
             self.announce('WARNING: skipping import check for Cygwin-based "%s"'
                 % ext.name)
             return
+        if os.environ.get('CROSS_COMPILE_TARGET') == 'yes':
+            return
         ext_filename = os.path.join(
             self.build_lib,
             self.get_ext_filename(self.get_ext_fullname(ext.name)))
@@ -335,27 +337,31 @@ class PyBuildExt(build_ext):
         try:
             imp.load_dynamic(ext.name, ext_filename)
         except ImportError as why:
-            self.failed.append(ext.name)
-            self.announce('*** WARNING: renaming "%s" since importing it'
-                          ' failed: %s' % (ext.name, why), level=3)
-            assert not self.inplace
-            basename, tail = os.path.splitext(ext_filename)
-            newname = basename + "_failed" + tail
-            if os.path.exists(newname):
-                os.remove(newname)
-            os.rename(ext_filename, newname)
+            if os.environ.get('CROSS_COMPILE_TARGET') != "yes":
+                self.announce('*** WARNING: renaming "%s" since importing it'
+                              ' failed: %s' % (ext.name, why), level=3)
+                assert not self.inplace
+                basename, tail = os.path.splitext(ext_filename)
+                newname = basename + "_failed" + tail
+                if os.path.exists(newname):
+                    os.remove(newname)
+                os.rename(ext_filename, newname)
 
-            # XXX -- This relies on a Vile HACK in
-            # distutils.command.build_ext.build_extension().  The
-            # _built_objects attribute is stored there strictly for
-            # use here.
-            # If there is a failure, _built_objects may not be there,
-            # so catch the AttributeError and move on.
-            try:
-                for filename in self._built_objects:
-                    os.remove(filename)
-            except AttributeError:
-                self.announce('unable to remove files (ignored)')
+                # XXX -- This relies on a Vile HACK in
+                # distutils.command.build_ext.build_extension().  The
+                # _built_objects attribute is stored there strictly for
+                # use here.
+                # If there is a failure, _built_objects may not be there,
+                # so catch the AttributeError and move on.
+                try:
+                    for filename in self._built_objects:
+                        os.remove(filename)
+                except AttributeError:
+                    self.announce('unable to remove files (ignored)')
+            else:
+                self.announce('WARNING: "%s" failed importing, but we leave it '
+                              'because we are cross-compiling' %
+                              ext.name)
         except:
             exc_type, why, tb = sys.exc_info()
             self.announce('*** WARNING: importing extension "%s" '
@@ -1663,7 +1669,7 @@ class PyBuildExt(build_ext):
                                          ffi_configfile):
                 from distutils.dir_util import mkpath
                 mkpath(ffi_builddir)
-                config_args = []
+                config_args =  sysconfig.get_config_var("CONFIG_ARGS").split(" ")
 
                 # Pass empty CFLAGS because we'll just append the resulting
                 # CFLAGS to Python's; -g or -O2 is to be avoided.

@@ -437,8 +437,8 @@ platform: $(BUILDPYTHON)
 # Build the shared modules
 sharedmods: $(BUILDPYTHON)
 	@case $$MAKEFLAGS in \
-	*s*) $(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py -q build;; \
-	*) $(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py build;; \
+	*s*) $(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' $(HOSTPYTHON) -E $(srcdir)/setup.py -q build;; \
+	*) $(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' $(HOSTPYTHON) -E $(srcdir)/setup.py build;; \
 	esac
 
 # Build static library
@@ -589,7 +589,7 @@ $(IO_OBJS): $(IO_H)
 $(GRAMMAR_H) $(GRAMMAR_C): Parser/pgen.stamp
 Parser/pgen.stamp: $(PGEN) $(GRAMMAR_INPUT)
 		-@$(INSTALL) -d Include
-		$(PGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C)
+		$(HOSTPGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C)
 		-touch Parser/pgen.stamp
 
 $(PGEN):	$(PGENOBJS)
@@ -1108,7 +1108,8 @@ libainstall:	all python-config
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
 sharedinstall: sharedmods
-	$(RUNSHARED) ./$(BUILDPYTHON) -E $(srcdir)/setup.py install \
+	CC='$(CC)' LDSHARED='$(BLDSHARED)' LDFLAGS='$(LDFLAGS)' OPT='$(OPT)' CROSS_COMPILE='$(CROSS_COMPILE)' \
+	$(RUNSHARED) ./$(HOSTPYTHON) -E $(srcdir)/setup.py install \
 	   	--prefix=$(prefix) \
 		--install-scripts=$(BINDIR) \
 		--install-platlib=$(DESTSHARED) \

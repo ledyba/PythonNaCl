@@ -75,6 +75,7 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#include <sys/_default_fcntl.h>
 #endif /* HAVE_FCNTL_H */
 
 #ifdef HAVE_GRP_H

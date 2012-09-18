@@ -21,8 +21,14 @@
 #if defined(__sgi) && defined(WITH_THREAD) && !defined(_SGI_MP_SOURCE)
 #define _SGI_MP_SOURCE
 #endif
+#ifdef _POSIX_THREADS
+#  undef _POSIX_THREADS
+#  include <stdio.h>
+#  define _POSIX_THREADS 1
+#else
+#  include <stdio.h>
+#endif
 
-#include <stdio.h>
 #ifndef NULL
 #   error "Python.h requires that stdio.h define NULL."
 #endif
